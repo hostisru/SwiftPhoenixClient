@@ -173,7 +173,8 @@ public class Socket {
   }
 	
 	public convenience init(_ endPoint: String,
-							params: Payload? = nil) {
+							params: Payload? = nil,
+							queue: DispatchQueue) {
 		self.init(endPoint: endPoint,
 				  transport: { url in
 					let webSocket = WebSocket(url: url)
