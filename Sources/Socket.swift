@@ -173,14 +173,13 @@ public class Socket {
   }
 	
 	public convenience init(_ endPoint: String,
-							params: Payload? = nil,
-							queue: DispatchQueue) {
-	  self.init(endPoint: endPoint,
-				transport: { url in
+							params: Payload? = nil) {
+		self.init(endPoint: endPoint,
+				  transport: { url in
 					let webSocket = WebSocket(url: url)
 					webSocket.callbackQueue = queue
 					return webSocket },
-				paramsClosure: paramsClosure)
+				  paramsClosure: { params })
 	}
   
   
