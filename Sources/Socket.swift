@@ -171,6 +171,17 @@ public class Socket {
               transport: { url in return WebSocket(url: url) },
               paramsClosure: paramsClosure)
   }
+	
+	public convenience init(_ endPoint: String,
+							paramsClosure: PayloadClosure?,
+							queue: DispatchQueue) {
+	  self.init(endPoint: endPoint,
+				transport: { url in
+					let webSocket = WebSocket(url: url)
+					webSocket.callbackQueue = queue
+					return webSocket },
+				paramsClosure: paramsClosure)
+	}
   
   
   init(endPoint: String,
