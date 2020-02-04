@@ -94,6 +94,9 @@ public class Channel {
   
   /// Timer to attempt to rejoin
   var rejoinTimer: TimeoutTimer
+	
+	/// barrier queue to thread safe remove from array
+	let barrierQueue = DispatchQueue(label: "thread-safe-obj", attributes: .concurrent)
   
   /// Initialize a Channel
   ///
@@ -388,8 +391,9 @@ public class Channel {
   private func on(_ event: String, delegated: Delegated<Message, Void>) -> Int {
     let ref = bindingRef
     self.bindingRef = ref + 1
-    
-    self.bindingsDel.append(Binding(event: event, ref: ref, callback: delegated))
+    barrierQueue.async(flags: .barrier) { [weak self] in
+		self?.bindingsDel.append(Binding(event: event, ref: ref, callback: delegated))
+	}
     return ref
   }
   
@@ -413,8 +417,8 @@ public class Channel {
   /// - parameter event: Event to unsubscribe from
   /// - paramter ref: Ref counter returned when subscribing. Can be omitted
   public func off(_ event: String, ref: Int? = nil) {
-	DispatchQueue.main.async {
-		self.bindingsDel.removeAll { (bind) -> Bool in
+	barrierQueue.async(flags: .barrier) { [weak self] in
+		self?.bindingsDel.removeAll { (bind) -> Bool in
 			bind.event == event && (ref == nil || ref == bind.ref)
 		}
 	}
@@ -554,9 +558,14 @@ public class Channel {
   func trigger(_ message: Message) {
     let handledMessage = self.onMessage(message)
     
-    self.bindingsDel
-      .filter( { return $0.event == message.event } )
-      .forEach( { $0.callback.call(handledMessage) } )
+	barrierQueue.sync { [weak self, weak handledMessage, weak message] in
+		guard let handledMessage = handledMessage,
+			let message = message else { return }
+		
+		self?.bindingsDel
+			.filter( { return $0.event == message.event } )
+			.forEach( { $0.callback.call(handledMessage) } )
+	}
   }
   
   /// Triggers an event to the correct event bindings created by
