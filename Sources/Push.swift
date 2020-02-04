@@ -199,7 +199,11 @@ public class Push {
   /// Reverses the result on channel.on(ChannelEvent, callback) that spawned the Push
   private func cancelRefEvent() {
     guard let refEvent = self.refEvent else { return }
-    self.channel?.off(refEvent)
+	if let refstr = self.ref, let ref = Int(refstr) {
+		self.channel?.off(refEvent, ref: ref)
+	} else {
+		self.channel?.off(refEvent)
+	}
   }
   
   /// Cancel any ongoing Timeout Timer

@@ -413,9 +413,11 @@ public class Channel {
   /// - parameter event: Event to unsubscribe from
   /// - paramter ref: Ref counter returned when subscribing. Can be omitted
   public func off(_ event: String, ref: Int? = nil) {
-    self.bindingsDel.removeAll { (bind) -> Bool in
-      bind.event == event && (ref == nil || ref == bind.ref)
-    }
+	DispatchQueue.main.async {
+		self.bindingsDel.removeAll { (bind) -> Bool in
+			bind.event == event && (ref == nil || ref == bind.ref)
+		}
+	}
   }
   
   /// Push a payload to the Channel
