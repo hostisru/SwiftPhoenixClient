@@ -75,6 +75,7 @@ public class Channel {
   var state: ChannelState
   
   /// Collection of event bindings
+	@Atomic
   var bindingsDel: [Binding]
   
   /// Tracks event binding ref counters
@@ -405,7 +406,9 @@ public class Channel {
     let ref = bindingRef
     self.bindingRef = ref + 1
     
-    self.bindingsDel.append(Binding(event: event, ref: ref, callback: delegated))
+		self.$bindingsDel.mutate {
+			$0.append(Binding(event: event, ref: ref, callback: delegated))
+		}
     return ref
   }
   
@@ -428,11 +431,13 @@ public class Channel {
   ///
   /// - parameter event: Event to unsubscribe from
   /// - paramter ref: Ref counter returned when subscribing. Can be omitted
-  public func off(_ event: String, ref: Int? = nil) {
-    self.bindingsDel.removeAll { (bind) -> Bool in
-      bind.event == event && (ref == nil || ref == bind.ref)
-    }
-  }
+	public func off(_ event: String, ref: Int? = nil) {
+		self.$bindingsDel.mutate {
+			$0.removeAll { (bind) -> Bool in
+				bind.event == event && (ref == nil || ref == bind.ref)
+			}
+		}
+	}
   
   /// Push a payload to the Channel
   ///
